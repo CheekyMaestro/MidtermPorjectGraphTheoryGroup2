@@ -29,7 +29,6 @@ MOVES_PHASE_1 = [
 #SET MOVES FOR PHASE 2 (ADJUSTED FOR CORNER PATTERN)
 
 MOVES_PHASE_2 = [
-    # Prioritize move from (3,3) to (2,1)
     (-1, -2), 
     (1, 2), (-1, 2), (2, -1), (-2, -1), 
     (2, 1), (-2, 1), (1, -2)
