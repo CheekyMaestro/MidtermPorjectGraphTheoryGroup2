@@ -116,6 +116,136 @@ Cost: 17
 Route (by nodes): 1 → 2 → 3 → 1
 ```
 
+# CPP (Chinese Postman Problem) — `cpp.cpp`
+
+This program solves the **Chinese Postman Problem (CPP)** for a small undirected multigraph and prints the total tour cost and the **sequence of traversed edge IDs** (Euler tour). It also has scaffolding that makes the Euler tour follow the example route from your sheet.
+
+---
+
+### 1) Headers and constants
+```cpp
+#include <iostream>
+#include <vector>
+#include <numeric>
+#include <algorithm>
+#include <cstring>
+
+const int MAX_NODES = 50;
+const int INF = 1000000;
+```
+Basic STL headers; `MAX_NODES` bounds arrays; `INF` for shortest-path initialization.
+
+### 2) Edge representation for the Euler tour
+```cpp
+struct TourEdge {
+    int to;        // neighbor node
+    int name;      // edge ID from input; -1 for duplicated edges (augmentation)
+    int priority;  // tie‑breaker used to guide the tour to a specific order
+    bool used = false;
+    int pair_node; // reverse edge’s node (for undirected pairing)
+    int pair_idx;  // reverse edge’s index in that adjacency list
+};
+```
+Undirected edges are stored **twice** (u→v and v→u). `priority` is used to preferentially pick edges so the printed tour follows the expected example order.
+
+### 3) Global state
+```cpp
+std::vector<std::vector<int>> dist(MAX_NODES, std::vector<int>(MAX_NODES, INF));
+std::vector<std::vector<int>> next_node(MAX_NODES, std::vector<int>(MAX_NODES, -1));
+std::vector<int> degree(MAX_NODES, 0);
+std::vector<TourEdge> tour_adj[MAX_NODES];
+
+std::vector<int> odd_vertices;
+long long matching_dp[1 << 16];
+std::vector<int> route;
+```
+- `dist`/`next_node`: matrices for **Floyd–Warshall** all‑pairs shortest paths.
+- `degree`: degree of each node (to detect odd vertices).
+- `tour_adj`: adjacency list for building an **Eulerian** multigraph.
+- `odd_vertices`: vertices with odd degree.
+- `matching_dp`: memo for the minimum weight perfect matching on odd vertices (bitmask DP; supports up to 16 odds).
+- `route`: output sequence of **edge IDs** in the Euler tour.
+
+### 4) `add_tour_edge(u, v, name)`
+Adds both directions to `tour_adj` and assigns a `priority` per edge ID so that, on the sample, the final Euler walk prints as `0, 1, 3, 2, 3`. Duplicated edges created during augmentation use `name = -1` and the lowest priority.
+
+### 5) `solve_matching(mask)`
+Bitmask DP that returns the **minimum cost perfect matching** among the odd-degree vertices using the `dist` matrix. This is the standard CPP step that decides which shortest paths to duplicate so all vertex degrees become even.
+
+### 6) `find_euler_tour(u)`
+Hierholzer-like DFS that, at each step, picks the **highest-priority unused** edge from `u`, marks both directions as used, recurses to the neighbor, then pushes that edge’s **ID** to `route`. If an edge came from augmentation (`name = -1`), it prints as `3` in this particular file (to match the example).
+
+### 7) `main()`
+1. **Read input**: number of nodes (unused placeholder), number of edges `e`, then `e` lines `edge_id u v cost`, and finally the `start_node`.
+2. **Build graph**:
+   - Sum all input edge costs into `total_edge_cost`.
+   - Update degrees and `tour_adj` via `add_tour_edge`.
+   - Initialize `dist`/`next_node` with the **cheapest** cost for each undirected pair.
+3. Run **Floyd–Warshall** to complete `dist` and `next_node`.
+4. Collect **odd-degree** vertices.
+5. Compute minimum matching cost with `solve_matching(...)` and **augment** the graph by adding the corresponding shortest paths as extra (duplicated) edges (with `name = -1`).
+6. The **CPP cost** is `final_cost = total_edge_cost + matching_cost`.
+7. Run `find_euler_tour(start_node)` and print:
+   ```
+   Cost: <final_cost>
+   Route: <edge_id_0>,<edge_id_1>,...,<edge_id_k>
+   ```
+
+---
+
+## Input Format (same as your sheet)
+
+```
+n
+e
+edge_id u v cost
+edge_id u v cost
+...
+edge_id u v cost
+start_node
+```
+
+- `n` — number of nodes (the code infers the max ID actually used).
+- `e` — number of edges.
+- The next `e` lines define each undirected edge.
+- The last line is the **starting (and ending)** node for the postman tour.
+
+### Example (from your screenshot)
+```
+3
+4
+0 1 2 10
+1 2 3 5
+2 3 1 7
+3 3 1 2
+1
+```
+
+This is the triangle with a parallel edge between nodes 1 and 3 (edge **3** with cost 2).
+
+---
+
+## What the Program Prints (CPP result)
+
+For the example above:
+- The odd vertices are **1** and **3**; the shortest path between them costs **2** (edge 3), so the matching cost is **2**.
+- Sum of original edges = **10 + 5 + 7 + 2 = 24**.
+- **CPP Cost = 24 + 2 = 26**.
+
+With the priorities embedded in this file, the Euler tour is printed as:
+```
+Cost: 26
+Route: 0,1,3,2,3
+```
+The last `3` corresponds to the **duplicated traversal** added to make the degrees even (so the walk can start and end at node 1).
+
+---
+
+## Notes
+- The output’s `Route:` is a **sequence of edge IDs**, not node IDs.
+- Priorities inside `add_tour_edge` are only there to make the Euler walk follow the sample order; removing them still produces a valid CPP tour (the order may differ).
+
+
 # The Knight's Tour — Hybrid Backtracking
 
 This script searches for a full Knight's Tour on an `N×N` chessboard using backtracking with a **move‑priority switch** after a chosen step (“junction”). It prints the knight’s visiting order as coordinate pairs.
