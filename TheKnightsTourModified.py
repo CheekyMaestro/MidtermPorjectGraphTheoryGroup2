@@ -13,7 +13,7 @@ JUNCTION_STEP = 17
 
 
 
-# Move Priorities: Right (x>0), Up (y<0), Left (x<0), Down (y>0)
+#Knights tour movre
 
 MOVES_PHASE_1 = [
     (2, -1),  # Right 2, Up 1
@@ -26,7 +26,7 @@ MOVES_PHASE_1 = [
     (-1, 2)   # Left 1, Down 2
 ]
 
-#SET MOVES FOR PHASE 2 (ADJUSTED FOR CORNER PATTERN)
+#Fixed Directional Heuristic 
 
 MOVES_PHASE_2 = [
     (-1, -2), 
